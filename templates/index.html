@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Group People by Address</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+<h1>Group People by Address</h1>
+<div>
+    <div>
+        <form id="inputForm" enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="file">
+            <button id="clearButton" type="button">Clear</button>
+            <br>
+            <textarea id="textInput" placeholder="Enter Name,Address pairs here (One pair per line)" rows="5"
+                      cols="40"></textarea>
+            <br>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <div id="output">
+        <h2>Results:</h2>
+        <div id="resultDisplay"></div>
+        <a id="downloadLink" download="output.txt" style="display: none;">Download Results</a>
+    </div>
+</div>
+<script src="/static/js/script.js"></script>
+</body>
+</html>
