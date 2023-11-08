@@ -55,6 +55,7 @@ def process_addresses(people_addresses: dict) -> dict:
     It takes a dictionary (people_addresses) with names as keys and their respective tokenized addresses as
     values and performs a similarity comparison among the addresses."""
     similar_addresses = {}
+    # TODO refactor and test again
     try:
         unmatched_people = set(people_addresses.keys())
         for person1, address1 in people_addresses.items():
