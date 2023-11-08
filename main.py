@@ -21,6 +21,7 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 async def index(request: Request):
+    """Returns the home page of the app."""
     return templates.TemplateResponse(
         "index.html", {"request": request}
     )
@@ -28,6 +29,8 @@ async def index(request: Request):
 
 @app.post("/process-data")
 async def handle_data(csv_file: UploadFile = File(None), text_input: str = Form(None)):
+    """This endpoint is responsible for processing data submitted by the client.
+    It can handle data in two different formats: CSV file upload or text input."""
     try:
         if csv_file:
             contents = await csv_file.read()

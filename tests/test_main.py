@@ -3,8 +3,6 @@ import io
 from fastapi import status
 from fastapi.testclient import TestClient
 
-from starlette.templating import Jinja2Templates
-
 from main import app
 
 client = TestClient(app)
