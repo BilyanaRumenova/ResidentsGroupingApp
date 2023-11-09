@@ -23,7 +23,7 @@ def process_data(data) -> str:
 
 
 def handle_input_data(data):
-    """Responsible for handling the input data and preparing it for further processing. It adapts to different
+    """Responsible for handling the input data and preparing it for further processing. It adapts to two
     types of input formats (plain text or CSV) and generates a dictionary (people_addresses) containing names as
     keys and cleaned addresses as values."""
     people_addresses = {}
@@ -55,25 +55,23 @@ def process_addresses(people_addresses: dict) -> dict:
     It takes a dictionary (people_addresses) with names as keys and their respective tokenized addresses as
     values and performs a similarity comparison among the addresses."""
     similar_addresses = {}
-    # TODO refactor and test again
     try:
-        unmatched_people = set(people_addresses.keys())
-        for person1, address1 in people_addresses.items():
-            tokenized_address_1 = tokenize_address(address1)
-            similar_to_current = [person1]
+        SIMILARITY_THRESHOLD = 0.5
+        unmatched_people = list(people_addresses.keys())
+        while unmatched_people:
+            current_person = unmatched_people.pop(0)
+            similar_to_current = [current_person]
+            tokenized_address_1 = tokenize_address(people_addresses[current_person])
 
-            for person2, address2 in people_addresses.items():
-                if person1 != person2 and person2 not in similar_to_current:
-                    tokenized_address_2 = tokenize_address(address2)
-                    similarity = jaccard_similarity(tokenized_address_1, tokenized_address_2)
-                    if similarity > 0.5:
-                        similar_to_current.append(person2)
-                        unmatched_people.discard(person2)
+            for other_person in unmatched_people[:]:
+                tokenized_address_2 = tokenize_address(people_addresses[other_person])
+                similarity = jaccard_similarity(tokenized_address_1, tokenized_address_2)
+                if similarity > SIMILARITY_THRESHOLD:
+                    similar_to_current.append(other_person)
+                    unmatched_people.remove(other_person)
 
-            similar_addresses[tuple(sorted(similar_to_current))] = sorted(similar_to_current)
-
-        for person in unmatched_people:
-            similar_addresses[(person,)] = [person]
+            similar_to_current.sort()
+            similar_addresses[tuple(similar_to_current)] = similar_to_current
 
         return similar_addresses
 
