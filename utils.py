@@ -4,6 +4,7 @@ from io import StringIO
 
 from fastapi import HTTPException
 from starlette import status
+from thefuzz import fuzz
 from translate import Translator
 
 
@@ -52,28 +53,29 @@ def handle_input_data(data):
 
 def process_addresses(people_addresses: dict) -> dict:
     """Responsible for analyzing and grouping similar addresses or people based on the similarity of their addresses.
-    It takes a dictionary (people_addresses) with names as keys and their respective tokenized addresses as
-    values and performs a similarity comparison among the addresses."""
+    It takes a dictionary (people_addresses) with names as keys and their respective addresses as values and
+    performs a similarity comparison among the addresses using fuzzy string matching (using TheFuzz library)."""
     similar_addresses = {}
-    # TODO refactor and test again
     try:
-        unmatched_people = set(people_addresses.keys())
-        for person1, address1 in people_addresses.items():
-            tokenized_address_1 = tokenize_address(address1)
-            similar_to_current = [person1]
+        SIMILARITY_THRESHOLD = 70
+        unmatched_people = list(people_addresses.keys())
+        while unmatched_people:
+            current_person = unmatched_people.pop(0)
+            similar_to_current = [current_person]
 
-            for person2, address2 in people_addresses.items():
-                if person1 != person2 and person2 not in similar_to_current:
-                    tokenized_address_2 = tokenize_address(address2)
-                    similarity = jaccard_similarity(tokenized_address_1, tokenized_address_2)
-                    if similarity > 0.5:
-                        similar_to_current.append(person2)
-                        unmatched_people.discard(person2)
+            for other_person in unmatched_people[:]:
+                # Use token sort ration in order to ignore the ordering of the addresses in the strings
+                # but still determine how similar they are. Token sort doesn’t care about what order words occur in.
+                similarity_ratio = fuzz.token_sort_ratio(
+                    people_addresses[current_person], people_addresses[other_person]
+                )
 
-            similar_addresses[tuple(sorted(similar_to_current))] = sorted(similar_to_current)
+                if similarity_ratio > SIMILARITY_THRESHOLD:
+                    similar_to_current.append(other_person)
+                    unmatched_people.remove(other_person)
 
-        for person in unmatched_people:
-            similar_addresses[(person,)] = [person]
+            similar_to_current.sort()
+            similar_addresses[tuple(similar_to_current)] = similar_to_current
 
         return similar_addresses
 
@@ -83,27 +85,15 @@ def process_addresses(people_addresses: dict) -> dict:
 
 def clean_address_string(address: str) -> str:
     """Responsible for cleaning the provided address string removing different types of quotation symbols.
-    This is needed in order to increase the similarity value when addresses are passed to jaccard_similarity function"""
+    This is needed in order to get more accurate value when addresses are passed for determining their
+    token sort ratio."""
     cleaned_address = (address.replace('”', '')
                        .replace('“', '')
                        .replace('"', '')
                        .replace("'", '').strip())
     if contains_cyrillic(cleaned_address):
         cleaned_address = translate_address(cleaned_address)
-    return cleaned_address.lower()
-
-
-def tokenize_address(address: str) -> set:
-    """Tokenizes the address by splitting it into words and removing punctuation"""
-    return set(address.replace(",", "")
-               .replace(".", "")
-               .split())
-
-
-def jaccard_similarity(set1, set2) -> float:
-    intersection = len(set1.intersection(set2))
-    union = len(set1.union(set2))
-    return intersection / union if union != 0 else 0
+    return cleaned_address
 
 
 def translate_address(address: str, source_language='bg', dest_language='en') -> str:
